@@ -8,6 +8,7 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -23,7 +24,7 @@ public class ReissueController {
 
     private final JWTUtil jwtUtil;
     private final RefreshRepository refreshRepository;
-
+    private final RedisTemplate<String, String> redisTemplate;
     @PostMapping("/reissue")
     public ResponseEntity<?> reissue(HttpServletRequest request, HttpServletResponse response){
 
@@ -63,6 +64,7 @@ public class ReissueController {
         //Refresh 토큰 저장 DB에 기존의 Refresh 토큰 삭제 후 새 Refresh 토큰 저장
         refreshRepository.deleteByRefresh(refresh);
         addRefreshEntity(username, newRefresh, 86400000L);
+        redisTemplate.opsForValue().set(username, newRefresh, 86400000L); // 예시 TTL: 24시간 (86400000 밀리초)
        response.setHeader("access",newAccess);
        response.addCookie(createCookie("refresh",newRefresh));
         System.out.println("access 토큰 재발급");
